@@ -122,18 +122,9 @@ var ieTransforms = {
     },
     // this test is the inversion of the css filters test from the modernizr project
     useIeTransforms = function() {
-        var modElem = document.createElement('modernizr'),
-		mStyle = modElem.style,
-		omPrefixes = 'Webkit Moz O ms',
-		domPrefixes = omPrefixes.toLowerCase().split(' '),
-        	props = ("transform" + ' ' + domPrefixes.join("Transform ") + "Transform").split(' ');
-        for ( var i in props ) {
-            var prop = props[i];
-            if ( !contains(prop, "-") && mStyle[prop] !== undefined ) {
-                return false;
-            }
-        }
-        return true;
+        var el = document.createElement('div');
+        el.style.cssText = ['-ms-','' ,''].join('filter:blur(2px); ');
+        return !!el.style.cssText && document.documentMode < 9;
     }();
 
 $.widget( "ui.iviewer", $.ui.mouse, {
@@ -227,7 +218,19 @@ $.widget( "ui.iviewer", $.ui.mouse, {
         /**
         * event is fired when image load error occurs
         */
-        onErrorLoad: null
+        onErrorLoad: null,
+        /**
+        * event is fired when image starts to change
+        */
+        onStartChange: null,
+        /**
+        * event is fired, when image is changed
+        */
+        onFinishChange: null,
+        /**
+        * event is fired when image change error occurs
+        */
+        onErrorChange: null
     },
 
     _create: function() {
@@ -277,10 +280,8 @@ $.widget( "ui.iviewer", $.ui.mouse, {
                     var zoom = (delta > 0)?1:-1,
                         container_offset = me.container.offset(),
                         mouse_pos = {
-                            //jquery.mousewheel 3.1.0 uses strange MozMousePixelScroll event
-                            //which is not being fixed by jQuery.Event
-                            x: (ev.pageX || ev.originalEvent.pageX) - container_offset.left,
-                            y: (ev.pageY || ev.originalEvent.pageX) - container_offset.top
+                            x: ev.pageX - container_offset.left,
+                            y: ev.pageY - container_offset.top
                         };
 
                     me.zoom_by(zoom, mouse_pos);
@@ -353,8 +354,26 @@ $.widget( "ui.iviewer", $.ui.mouse, {
 
     update: function()
     {
-        this._updateContainerInfo()
+        this._updateContainerInfo();
         this.setCoords(this.img_object.x(), this.img_object.y());
+    },
+
+
+    changeImage: function ( src ) {
+        var me = this;
+        this._trigger('onStartChange', 0, src);
+        this.container.addClass("iviewer_loading");
+        this.img_object.change (src, function(){
+            me._imageChanged(src);
+        }, function(){
+            me._trigger("onErrorChange", 0, src);
+        });
+    },
+
+    _imageChanged: function(src) {
+        this.container.removeClass("iviewer_loading");
+        this.container.addClass("iviewer_cursor");
+        this._trigger('onFinishChange', 0, src);
     },
 
     loadImage: function( src )
@@ -929,6 +948,42 @@ $.ui.iviewer.ImageObject = function(do_anim) {
         }, 0);
 
         this.angle(0);
+    };
+
+    /**
+     * Check if image is changed.
+     *
+     * @return {boolean}
+     */
+    this.changed = function() { return this._changed; };
+
+    /**
+     * Chnage image.
+     *
+     * @param {string} src Image url.
+     * @param {Function=} changed Function will be called on image load.
+     */
+    this.change = function(src, changed, error) {
+        var self = this;
+
+        changed = changed || jQuery.noop;
+        this._changed = false;
+
+        //If we assign new image url to the this._img IE9 fires onload event and image width and
+        //height are set to zero. So, we create another image object and load image through it.
+        var img = new Image();
+        img.onload = function() {
+            self._changed = true;
+            self._img[0].src = src;
+            changed();
+        };
+        img.onerror = error;
+
+        //we need this because sometimes internet explorer 8 fires onload event
+        //right after assignment (synchronously)
+        setTimeout(function() {
+            img.src = src;
+        }, 0);
     };
 
     this._dimension = function(prefix, name) {
