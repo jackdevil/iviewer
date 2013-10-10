@@ -273,7 +273,7 @@ $.widget( "ui.iviewer", $.ui.mouse, {
         this.img_object = new $.ui.iviewer.ImageObject(this.options.zoom_animation);
 
         if (this.options.mousewheel) {
-            this.container.bind('mousewheel.iviewer', function(ev, delta)
+            this.container.mousewheel(function(ev, delta, deltaX, deltaY)
                 {
                     //this event is there instead of containing div, because
                     //at opera it triggers many times on div
@@ -448,7 +448,6 @@ $.widget( "ui.iviewer", $.ui.mouse, {
 
         var new_x = this.img_object.x() - dx;
         var new_y = this.img_object.y() - dy;
-
         this.setCoords(new_x, new_y);
     },
 
