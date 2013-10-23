@@ -230,7 +230,11 @@ $.widget( "ui.iviewer", $.ui.mouse, {
         /**
         * event is fired when image change error occurs
         */
-        onErrorChange: null
+        onErrorChange: null,
+        /**
+        * event is fired when image change error occurs
+        */
+        onErrorImageLoad: null
     },
 
     _create: function() {
@@ -388,6 +392,9 @@ $.widget( "ui.iviewer", $.ui.mouse, {
             me._imageLoaded(src);
         }, function() {
             me._trigger("onErrorLoad", 0, src);
+        });
+        $(this.img_object).on('errorImageLoad',function(){
+            me._trigger('onErrorImageLoad', 0, src);
         });
     },
 
@@ -944,6 +951,9 @@ $.ui.iviewer.ImageObject = function(do_anim) {
         //right after assignment (synchronously)
         setTimeout(function() {
             img.src = src;
+            $(img).error(function(){
+                $(self).trigger("errorImageLoad");
+            });
         }, 0);
 
         this.angle(0);
@@ -982,6 +992,9 @@ $.ui.iviewer.ImageObject = function(do_anim) {
         //right after assignment (synchronously)
         setTimeout(function() {
             img.src = src;
+            $(img).error(function(){
+                $(self).trigger("errorImageLoad");
+            });
         }, 0);
     };
 
