@@ -168,6 +168,7 @@ $.widget( "ui.iviewer", $.ui.mouse, {
         * if false, plugin doesn't bind resize event on window and this must
         * be handled manually
         **/
+        dblClickDelay: 700,
         update_on_resize: true,
         /**
         * event is triggered when zoom value is changed
@@ -207,6 +208,11 @@ $.widget( "ui.iviewer", $.ui.mouse, {
         * @param object coords mouse coordinates on the image
         **/
         onClick: jQuery.noop,
+        /**
+        * mouse dblClick event
+        * @param object coords mouse coordinates on the image
+        **/
+        onDblClick: jQuery.noop,
         /**
         * event is fired when image starts to load
         */
@@ -325,10 +331,22 @@ $.widget( "ui.iviewer", $.ui.mouse, {
         }
 
         //init object
+        var clickCount = 0, timer = null;
         this.img_object.object()
-            //bind mouse events
-            .click(function(e){return me._click(e)})
-                .prependTo(this.container);
+        .click(function(e){
+            clickCount++;
+            if(clickCount === 1) {
+                timer = setTimeout(function() {
+                    clickCount = 0;
+                    return me._click(e);
+                }, me.options.dblClickDelay);
+            } else {
+                clearTimeout(timer);
+                clickCount = 0;
+                return me._dblclick(e);
+            }
+        })
+        .prependTo(this.container);
 
         this.container.bind('mousemove', function(ev) { me._handleMouseMove(ev); });
 
@@ -821,12 +839,18 @@ $.widget( "ui.iviewer", $.ui.mouse, {
     {
         $.ui.mouse.prototype._mouseStop.call(this, e);
         this.container.removeClass("iviewer_drag_cursor");
+        this.dragged = true;
         this._trigger('onStopDrag', 0, this._getMouseCoords(e));
     },
-
+    _dblclick: function(e){
+        this._trigger('onDblClick', 0, this._getMouseCoords(e));
+    },
     _click: function(e)
     {
-        this._trigger('onClick', 0, this._getMouseCoords(e));
+        if (!this.dragged) {
+            this._trigger('onClick', 0, this._getMouseCoords(e));
+        }
+        this.dragged = false;
     },
 
     /**
