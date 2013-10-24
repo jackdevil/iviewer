@@ -129,6 +129,8 @@ var ieTransforms = {
 
 $.widget( "ui.iviewer", $.ui.mouse, {
     widgetEventPrefix: "iviewer",
+    leftSide: false,
+    rightSide: false,
     options : {
         /**
         * start zoom value for image, not used now
@@ -507,12 +509,18 @@ $.widget( "ui.iviewer", $.ui.mouse, {
         }
         if(x > 0){
             x = 0;
+            this.leftSide = true;
+        } else {
+            this.leftSide = false;
         }
         if(y + this.img_object.display_height() < this.options.height){
             y = this.options.height - this.img_object.display_height();
         }
         if(x + this.img_object.display_width() < this.options.width){
             x = this.options.width - this.img_object.display_width();
+            this.rightSide = true;
+        } else {
+            this.rightSide = false;
         }
         if(this.img_object.display_width() <= this.options.width){
             x = -(this.img_object.display_width() - this.options.width)/2;
@@ -751,6 +759,10 @@ $.widget( "ui.iviewer", $.ui.mouse, {
         if (!param) { return; }
 
         switch (param) {
+            case 'leftSide':
+                return this.leftSide;
+            case 'rightSide':
+                return this.rightSide;
             case 'orig_width':
             case 'orig_height':
                 if (withoutRotation) {
