@@ -293,7 +293,12 @@ $.widget( "ui.iviewer", $.ui.mouse, {
             if (this.options.pinch) {
                 this.container
                     .on('pinch', function(ev) {
-                        me.set_zoom(me.current_zoom + me.current_zoom * (ev.gesture.scale - me._pinch_scale));
+                        var container_offset = me.container.offset(),
+                            mouse_pos = {
+                                x: ev.gesture.center.pageX - container_offset.left,
+                                y: ev.gesture.center.pageY - container_offset.top
+                            };
+                        me.set_zoom(me.current_zoom + me.current_zoom * (ev.gesture.scale - me._pinch_scale), undefined, mouse_pos);
                         me._pinch_scale = ev.gesture.scale;
                     })
                     .on('transformstart', function(ev) {
