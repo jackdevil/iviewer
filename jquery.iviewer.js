@@ -518,6 +518,38 @@ $.widget( "ui.iviewer", $.ui.mouse, {
     },
 
     /**
+    *
+    *
+    *
+    **/
+    moveToSide: function(side) {
+        var new_x, new_y;
+        switch (side) {
+            case 'left':
+                new_x = 0;
+                new_y = this.img_object.y();
+                this.setCoords(new_x, new_y);
+                return true;
+            case 'right':
+                new_x = this.options.width - this.img_object.display_width();
+                new_y = this.img_object.y();
+                this.setCoords(new_x, new_y);
+                return true;
+            case 'top':
+                new_x = this.img_object.x();
+                new_y = 0;
+                this.setCoords(new_x, new_y);
+                return true;
+            case 'bottom':
+                new_x = this.img_object.x();
+                new_y = this.options.height - this.img_object.display_height();
+                this.setCoords(new_x, new_y);
+                return true;
+        }
+        return false;
+    },
+
+    /**
      * Get container offset object.
      */
     getContainerOffset: function() {
@@ -554,14 +586,14 @@ $.widget( "ui.iviewer", $.ui.mouse, {
             this._sides.left = false;
         }
 
-        if(y + this.img_object.display_height() < this.options.height){
+        if(y + this.img_object.display_height() <= this.options.height){
             y = this.options.height - this.img_object.display_height();
             this._sides.bottom = true;
         } else {
             this._sides.bottom = false;
         }
 
-        if(x + this.img_object.display_width() < this.options.width){
+        if(x + this.img_object.display_width() <= this.options.width){
             x = this.options.width - this.img_object.display_width();
             this._sides.right = true;
         } else {
