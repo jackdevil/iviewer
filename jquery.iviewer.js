@@ -240,8 +240,13 @@ $.widget( "ui.iviewer", $.ui.mouse, {
     },
 
     _pinch_scale: 0,
-    _drag_start_left_side: false,
-    _drag_start_right_side: false,
+
+    _sides: {
+        left: false,
+        right: false,
+        top: false,
+        bottom: false
+    },
 
     _create: function() {
         var me = this;
@@ -530,25 +535,42 @@ $.widget( "ui.iviewer", $.ui.mouse, {
         x = parseInt(x, 10);
         y = parseInt(y, 10);
         //check new coordinates to be correct (to be in rect)
-        if(y > 0){
+        if(y >= 0){
             y = 0;
-        }
-        if(x > 0){
-            x = 0;
+            this._sides.top = true;
         } else {
+            this._sides.top = false;
         }
+
+        if(x >= 0){
+            x = 0;
+            this._sides.left = true;
+        } else {
+            this._sides.left = false;
+        }
+
         if(y + this.img_object.display_height() < this.options.height){
             y = this.options.height - this.img_object.display_height();
+            this._sides.bottom = true;
+        } else {
+            this._sides.bottom = false;
         }
+
         if(x + this.img_object.display_width() < this.options.width){
             x = this.options.width - this.img_object.display_width();
+            this._sides.right = true;
         } else {
+            this._sides.right = false;
         }
+
         if(this.img_object.display_width() <= this.options.width){
             x = -(this.img_object.display_width() - this.options.width)/2;
+            this._sides.left = true;
         }
+
         if(this.img_object.display_height() <= this.options.height){
             y = -(this.img_object.display_height() - this.options.height)/2;
+            this._sides.top = true;
         }
         return { x: x, y: y};
     },
@@ -772,10 +794,8 @@ $.widget( "ui.iviewer", $.ui.mouse, {
         if (!param) { return; }
 
         switch (param) {
-            case 'is_left_side':
-                return this._drag_start_left_side;
-            case 'is_right_side':
-                return this._drag_start_right_side;
+            case 'sides':
+                return this._sides;
             case 'orig_width':
             case 'orig_height':
                 if (withoutRotation) {
@@ -818,6 +838,8 @@ $.widget( "ui.iviewer", $.ui.mouse, {
 
         this.dx = e.pageX - this.img_object.x();
         this.dy = e.pageY - this.img_object.y();
+
+        this._drag = true;
         return true;
     },
 
@@ -861,12 +883,12 @@ $.widget( "ui.iviewer", $.ui.mouse, {
     _mouseStop: function(e) {
         $.ui.mouse.prototype._mouseStop.call(this, e);
         this.container.removeClass("iviewer_drag_cursor");
-        this.dragged = true;
         this._trigger('onStopDrag', 0, this._getMouseCoords(e));
     },
 
     _click: function(e) {
-        this._trigger('onClick', 0, this._getMouseCoords(e));
+        if (!this._drag) this._trigger('onClick', 0, this._getMouseCoords(e));
+        this._drag = false;
     },
 
     _dblclick: function(e){
