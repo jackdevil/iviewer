@@ -566,6 +566,7 @@ $.widget( "ui.iviewer", $.ui.mouse, {
         var coords = this._correctCoords(x,y);
         this.img_object.x(coords.x);
         this.img_object.y(coords.y);
+        this.container.trigger('onImageCoordsChange');
     },
 
     _correctCoords: function(x, y) {
@@ -654,7 +655,6 @@ $.widget( "ui.iviewer", $.ui.mouse, {
     _getMouseCoords : function(e) {
         var containerOffset = this.container.offset();
             coords = this.containerToImage(e.pageX - containerOffset.left, e.pageY - containerOffset.top);
-
         return coords;
     },
 
@@ -725,6 +725,7 @@ $.widget( "ui.iviewer", $.ui.mouse, {
         this.current_zoom = new_zoom;
 
         this.update_status();
+        this.container.trigger('onImageCoordsChange');
     },
 
     /**
@@ -736,7 +737,7 @@ $.widget( "ui.iviewer", $.ui.mouse, {
     zoom_by: function(delta, zoom_center) {
         var closest_rate = this.find_closest_zoom_rate(this.current_zoom);
 
-        var next_rate = closest_rate + delta;
+        var next_rate = closest_rate + delta
         var next_zoom = this.options.zoom_base * Math.pow(this.options.zoom_delta, next_rate)
         if(delta > 0 && next_zoom < this.current_zoom)
         {
@@ -816,6 +817,27 @@ $.widget( "ui.iviewer", $.ui.mouse, {
                 this.zoom_object.html(percent + "%");
             }
         }
+    },
+
+    add_marker: function(x, y, template, x_correct, y_correct) {
+        x = Math.round(x) || 50;
+        y = Math.round(y) || 50;
+        template = template || '<a class="marker"></a>';
+        x_correct = x_correct || 0;
+        y_correct = y_correct || 0;
+
+        var marker = $(template);
+        var me = this, containerCoords;
+        var new_marker_coords = function() {
+            containerCoords = me.imageToContainer(x, y);
+            marker.css('left', containerCoords.x + x_correct);
+            marker.css('top', containerCoords.y + y_correct);
+        };
+        new_marker_coords();
+        this.container.on('onImageCoordsChange', new_marker_coords);
+
+        this.container.append(marker);
+        return {x: x, y: y, marker: marker};
     },
 
     /**
