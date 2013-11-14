@@ -566,7 +566,8 @@ $.widget( "ui.iviewer", $.ui.mouse, {
         var coords = this._correctCoords(x,y);
         this.img_object.x(coords.x);
         this.img_object.y(coords.y);
-        this.container.trigger('onImageCoordsChange');
+        this.container.trigger('onImageCoordsChange'); //ToDo remove
+        this.container.trigger('onImageCoordinatesChange');
     },
 
     _correctCoords: function(x, y) {
@@ -725,7 +726,11 @@ $.widget( "ui.iviewer", $.ui.mouse, {
         this.current_zoom = new_zoom;
 
         this.update_status();
-        this.container.trigger('onImageCoordsChange');
+
+        this.container.trigger('onImageCoordsChange'); // ToDo remove
+        this.container.trigger('onImageCoordinatesChange', new_zoom);
+
+
     },
 
     /**
@@ -834,12 +839,44 @@ $.widget( "ui.iviewer", $.ui.mouse, {
             marker.css('top', containerCoords.y + y_correct);
         };
         new_marker_coords();
-        this.container.on('onImageCoordsChange', new_marker_coords);
-
+        marker.on('onChangeMarkerCoords', new_marker_coords);
+        this.container.on('onImageCoordsChange', function(){ marker.trigger('onChangeMarkerCoords') });
         this.container.append(marker);
         return {x: x, y: y, marker: marker};
     },
 
+    create_static_object: function(x, y, template, correct) {
+        correct = correct || {x: 0, y: 0};
+        var object = $(template);
+        var me = this, containerCoordinates;
+        var change_coordinates = function () {
+            containerCoordinates = me.imageToContainer(x, y);
+            object.css('left', Math.round(containerCoordinates.x + correct.x));
+            object.css('top', Math.round(containerCoordinates.y + correct.y));
+            object.css('font-size', 10*me.current_zoom/100 + "px");
+            object.css('line-height', 10*me.current_zoom/100 + "px");
+        };
+        change_coordinates();
+        object.on('onChangeCoordinates', change_coordinates);
+        this.container.on('onImageCoordinatesChange',function(){ object.trigger('onChangeCoordinates') });
+        this.container.append(object);
+        return {x: x, y: y, object: object};
+    },
+
+    change_object_coordinates: function(object, x, y, correct){
+        correct = correct || {x: 0, y: 0};
+        var me = this, containerCoordinates;
+        var change_coordinates = function () {
+            containerCoordinates = me.imageToContainer(x, y);
+            object.css('left', Math.round(containerCoordinates.x + correct.x));
+            object.css('top', Math.round(containerCoordinates.y + correct.y));
+            object.css('font-size', 10*me.current_zoom/100 + "px");
+            object.css('line-height', 10*me.current_zoom/100 + "px");
+        };
+        change_coordinates();
+        object.off('onChangeCoordinates');
+        object.on('onChangeCoordinates', change_coordinates);
+    },
     /**
      * Get some information about the image.
      *     Currently orig_(width|height), display_(width|height), angle, zoom and src params are supported.
